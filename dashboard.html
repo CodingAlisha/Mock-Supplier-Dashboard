@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Dashboard</title>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js'></script>
+    <head>
+        <link rel='stylesheet' href='styles.css'>
+    </head>
+</head>
+<body>
+    <h1>Supplier Performance Dashboard</h1>
+
+    <div id='kpiContainer'></div>
+
+    <div id='supplierChartContainer'>
+        <div div class='supplierChartContainerBox'><canvas id='supplierChart1'></canvas></div>
+        <div class='supplierChartContainerBox'><canvas id='supplierChart2'></canvas></div>
+        <div class='supplierChartContainerBox'><canvas id='supplierChart3'></canvas></div>
+        <div class='supplierChartContainerBox'><canvas id='supplierChart4'></canvas></div>
+
+    </div>
+
+    <!-- <div id='supplierChartContainer'>
+        < class='supplierChartContainerBox'><canvas id='supplierChart1'></canvas>
+        <div class='supplierChartContainerBox'></div><canvas id='supplierChart2'></canvas></div>
+        <div class='supplierChartContainerBox'></div><canvas id='supplierChart3'></canvas></div>
+
+    </div> -->
+
+    <div id='output'>Loading...</div>
+
+    <script>
+        
+        Papa.parse('supplier_performance_granular.csv', {
+            download:true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                console.log('Parsed data:', results.data);
+                document.getElementById('output').innerText = 'Loaded' + results.data.length + 'rows. Check console for details'
+
+                const KpiHeaders = {
+                    order_quantity: 'Orders Placed', 
+                    received_quantity: 'Orders Received',
+                    rejected_quantity: 'Orders Rejected', 
+                    returned_quantity: 'Orders Returned'
+                
+            };
+                KpiHeadersCards(results.data, KpiHeaders);
+
+
+                showStatusChart('supplierChart1', results.data, 'order_status', 'Order Status');
+                showStatusChart('supplierChart2', results.data, 'line_status', 'Line Status');
+                showStatusChart('supplierChart3', results.data, 'invoice_status', 'Invoice Status');
+                showStatusChart('supplierChart4', results.data, 'unit_of_measure', 'Unit');
+            },
+            error: function(err) {
+                console.error('Parse err');
+                document.getElementById('output').innerText = 'Error loading CSV';
+            }
+        });
+
+        function KpiHeadersCards (data, headers) {
+            const container = document.getElementById('kpiContainer');
+
+            container.innerHTML = Object.entries(headers).map(([key, label]) => {
+                const total = data.reduce((sum, row) => {
+                    const value = parseFloat(row[key]) || 0;
+                    return sum + value;
+                }, 0);
+                return `
+                <div class= 'kpiCard'>
+                    <h3>${label}</h3>
+                    <p>${total.toLocaleString()}</p>
+                    </div>
+                    `;
+                }).join('');
+                }
+
+        function getStatusCounts(data, column) {
+            const counts = {};
+            data.forEach(row => {
+                const value = row[column] || 'Unknown';
+                counts [value] = (counts[value] || 0) + 1;
+            });
+            return counts;
+        }
+
+        
+        let chartView = {};
+
+        function showStatusChart (canvasId, data, column, title) {
+            const counts = getStatusCounts(data, column);
+            const labels = Object.keys(counts);
+            const values = Object.values(counts);
+
+            if (chartView[canvasId]) {
+                chartView[canvasId].remove();
+            }
+
+            chartView[canvasId] = new Chart(document.getElementById(canvasId), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data:values,
+                        backgroundColor: ['green', 'orange', 'blue', 'red', 'yellow', 'pink']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRation: false,
+                    plugins: {
+                        title: {
+                            display:true,
+                            text: title
+                        }
+                    }
+                }
+            })
+        }
+
+    </script>
+    
+</body>
+</html>
