@@ -2,12 +2,13 @@
 
 
 body {
-    background-color: #ebe7e7;
+    background-color: #ede2cc;
 }
 
 h1 {
     font-size: xx-large;
-    color: #665;
+    color: #D8C9A8;
+    background-color: #4F5B2A;
     text-align: center;
     text-transform: uppercase;
     padding: 50px;
@@ -18,11 +19,12 @@ h1 {
     gap: 16px;
     margin: 20px 0;
     flex-wrap: wrap;
-    padding: 0 24px;
+    padding: 60px 24px 60px;
+    background-color: #F5EFE3;
 }
 
 .kpiCard {
-    background: #ffffff;
+    background: #F5EFE3;
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 46px 20px;
@@ -30,11 +32,18 @@ h1 {
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     flex: 1;
     min-width: 160px;
+    transition: transform 0.3s ease, box-shadow 0.3 ease;
+}
+
+.kpiCard:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(#4F5B2A);
+    
 }
 
 .kpiCard h3 {
     font-size: 20px;
-    color: #665;
+    color: #4F5B2A;
     margin: 0 0 8px 0;
     text-transform: uppercase;
     letter-spacing: 0.5;
@@ -44,7 +53,7 @@ h1 {
 .kpiCard p {
     font-size: 28px;
     font-weight: bold;
-    color: #636161;
+    color: #4F5B2A;
     margin: 0;
 }
 
@@ -61,4 +70,54 @@ h1 {
     max-height: 300px;
     flex: 1;
 }
+
+#monthSelector {
+    padding: 8px 22px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin: 16px 0;
+    cursor: pointer;
+}
+
+#monthSelector:hover {
+    border-color: #999;
+}
+
+#monthSelector:focus {
+    outline: none;
+    border-color: #4e4d4d;
+}
+
+#supplierTableContainer {
+    display: flex;
+    gap:20px;
+    flex-wrap: wrap;
+    margin: 20px 0;
+    width: 880px;
+    padding: 5px 20px 80px;
+    font-size: xx-large;
+    color:#4F5B2A;
+  
+}
+
+
+#supplierTableContainerBox {
+    width: 280px;
+    height: 280px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 1 1px 3px rgba(0, 0, 0, 0.1);
+    
+}
+
+
+#supplierTableContainerBox canvas {
+    width: 100% !important;
+    height: 100% !important;
+    
+}
+
 

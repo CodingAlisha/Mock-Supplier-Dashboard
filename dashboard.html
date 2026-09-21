@@ -14,6 +14,13 @@
     <h1>Supplier Performance Dashboard</h1>
 
     <div id='kpiContainer'></div>
+    
+
+    <select id='monthSelector'></select>
+
+    <div id='supplierTableContainer'></div>
+
+    <h1>Consolidated Supplier Performance Stats</h1>
 
     <div id='supplierChartContainer'>
         <div div class='supplierChartContainerBox'><canvas id='supplierChart1'></canvas></div>
@@ -23,14 +30,7 @@
 
     </div>
 
-    <!-- <div id='supplierChartContainer'>
-        < class='supplierChartContainerBox'><canvas id='supplierChart1'></canvas>
-        <div class='supplierChartContainerBox'></div><canvas id='supplierChart2'></canvas></div>
-        <div class='supplierChartContainerBox'></div><canvas id='supplierChart3'></canvas></div>
-
-    </div> -->
-
-    <div id='output'>Loading...</div>
+    <!-- <div id='output'>Loading...</div> -->
 
     <script>
         
@@ -39,46 +39,102 @@
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
-                console.log('Parsed data:', results.data);
-                document.getElementById('output').innerText = 'Loaded' + results.data.length + 'rows. Check console for details'
-
-                const KpiHeaders = {
-                    order_quantity: 'Orders Placed', 
-                    received_quantity: 'Orders Received',
-                    rejected_quantity: 'Orders Rejected', 
-                    returned_quantity: 'Orders Returned'
-                
-            };
-                KpiHeadersCards(results.data, KpiHeaders);
+                // console.log('Parsed data:', results.data);
+                // document.getElementById('output').innerText = 'Loaded' + results.data.length + 'rows. Check console for details'
 
 
-                showStatusChart('supplierChart1', results.data, 'order_status', 'Order Status');
-                showStatusChart('supplierChart2', results.data, 'line_status', 'Line Status');
-                showStatusChart('supplierChart3', results.data, 'invoice_status', 'Invoice Status');
-                showStatusChart('supplierChart4', results.data, 'unit_of_measure', 'Unit');
+                showMonthDropdown(results.data);
+
+                const selectedMonth = document.getElementById('monthSelector') .value;
+                updateDashboard(results.data, selectedMonth);
+
+                document.getElementById('monthSelector').addEventListener('change', function() {
+                    updateDashboard(results.data, this.value);
+                });
+
+
             },
             error: function(err) {
                 console.error('Parse err');
                 document.getElementById('output').innerText = 'Error loading CSV';
             }
         });
+    
 
-        function KpiHeadersCards (data, headers) {
-            const container = document.getElementById('kpiContainer');
+        function showMonthDropdown(data) {
+            const months = [...new Set(data.map(row => row['reporting_month']))].sort();
+            const selector = document.getElementById('monthSelector');
 
-            container.innerHTML = Object.entries(headers).map(([key, label]) => {
-                const total = data.reduce((sum, row) => {
-                    const value = parseFloat(row[key]) || 0;
-                    return sum + value;
-                }, 0);
-                return `
-                <div class= 'kpiCard'>
-                    <h3>${label}</h3>
-                    <p>${total.toLocaleString()}</p>
+            selector.innerHTML = months.map(month =>
+                `<option value= '${month}'>${month}</option>`
+            ).join('');
+        }
+
+        function updateDashboard(data, selectedMonth) {
+
+    const KpiHeaders = {
+        supplier_name: [
+            {label: 'Supplier', key: 'supplier_name' },
+            {label: 'Orders Received', key: 'orders_received'},
+            {label: 'On Time Orders', key: 'order_status'}
+        ],
+
+        received_quantity: 'Orders Received',
+        rejected_quantity: 'Orders Rejected', 
+        returned_quantity: 'Orders Returned',
+    
+
+};
+
+    KpiHeadersCards(data, KpiHeaders);
+
+    showStatusChart('supplierChart1', data, 'order_status', 'Order Status');
+    showStatusChart('supplierChart2', data, 'line_status', 'Line Status');
+    showStatusChart('supplierChart3', data, 'invoice_status', 'Invoice Status');
+    showStatusChart('supplierChart4', data, 'unit_of_measure', 'Unit');
+
+    const top20 = getTop20BySupplier(data, selectedMonth);
+    renderSupplierTable(top20);
+    }
+
+        function KpiHeadersCards ( data) {
+            const cardContainer = document.getElementById('kpiContainer');
+            const supplierCounts = {};
+
+            data.forEach(row => {
+                if (!row.supplier_name || !row.order_status) return;
+
+                const isDelivered = row.order_status.toLowerCase() === 'delivered';
+                const isOnTime = row.delivery_date === row.promised_date;
+
+                if (isDelivered && isOnTime) {
+                    supplierCounts[row.supplier_name] = (supplierCounts[row.supplier_name] || 0) + 1;
+                }
+            });
+
+            const sortedSuppliers = Object.keys(supplierCounts).map(name => {
+                return {
+                    name: name, 
+                    onTimeCount: supplierCounts[name]
+                };
+            }).sort((a, b) => b.onTimeCount - a.onTimeCount);
+
+            const top8 = sortedSuppliers.slice(0, 10);
+
+            let cardsHtml = '';
+            top8.forEach((supplier, index) => {
+                cardsHtml += `
+                <div class='kpiCard topSupplierCard'>
+                    <span class='rankBadge'>#${index + 1}</span>
+                    <h3>${supplier.name}</h3>
+                    <p><strong>${supplier.onTimeCount}</strong> On Time Deliveries</p>
                     </div>
                     `;
-                }).join('');
-                }
+            });
+
+            cardContainer.innerHTML = cardsHtml;
+
+        }
 
         function getStatusCounts(data, column) {
             const counts = {};
@@ -98,7 +154,7 @@
             const values = Object.values(counts);
 
             if (chartView[canvasId]) {
-                chartView[canvasId].remove();
+                chartView[canvasId].destroy();
             }
 
             chartView[canvasId] = new Chart(document.getElementById(canvasId), {
@@ -112,7 +168,7 @@
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRation: false,
+                    maintainAspectRatio: false,
                     plugins: {
                         title: {
                             display:true,
@@ -122,6 +178,101 @@
                 }
             })
         }
+
+        // function getSupplierMetrics(data, reportingMonth) {
+        //     const filtered = data.filter (row => row['reporting_month'] === reportingMonth);
+        //     const suppliers = {};
+
+        //     filtered.forEach(row => {
+        //         const name = row['supplier_name'] || 'Unknown Supplier';
+
+        //         if (!suppliers[name]) {
+        //             suppliers[name] ={
+        //                 order_quantity: 0,
+        //                 returned_quantity: 0,
+        //                 rejected_quantity: 0,
+        //                 onTimeCount: 0,
+        //                 totalOrders: 0
+        //             };
+        //         }
+
+        //         suppliers[name].order_quantity += parseFloat(row['order_ quantity']) || 0;
+        //         suppliers[name].returned_quantity += parseFloat(row['returned_ quantity']) || 0;
+        //         suppliers[name].rejected_quantity += parseFloat(row['rejected_ quantity']) || 0;
+        //         suppliers[name].onTimeCount += 1;
+
+        //         if (row['promised_delivery_date'] === row['actual_delivery_date']) {
+        //             suppliers[name].onTimeCount += 1;
+        //         }
+        //     });
+        //     return suppliers;
+        // }
+
+        function getSupplierMetrics(data, reportingMonth) {
+            const filtered = data.filter (row => row['reporting_month'] === reportingMonth);
+            const suppliers = {};
+
+            filtered.forEach(row => {
+                const name = row['supplier_name'] || 'Unknown Supplier';
+                const tier = row['supplier_tier'] || 'Unknown Tier';
+
+                if (!suppliers[name]) {
+                    suppliers[name] ={
+                        supplier_name: name,
+                        supplier_tier: tier,
+                        onTimeCount: 0
+                       
+                    };
+                }
+
+                suppliers[name].totalOrders +1;
+                const promisedDate = row['promised_delivery_date'];
+                const actualDate = row['actual_delivery_date'];
+
+                if (row['promised_delivery_date'] === row['actual_delivery_date']) {
+                    suppliers[name].onTimeCount += 1;
+                }
+            });
+            return suppliers;
+        }
+
+
+
+
+
+
+        function getTop20BySupplier(data, reportingMonth) {
+            const metrics = getSupplierMetrics(data, reportingMonth);
+
+            return Object.entries(metrics)
+            .map(([name, values]) => ({ supplier_name: name, ...values }))
+            .sort((a, b) => b.onTimeCount - a.onTimeCount)
+            .slice(0,20);
+        }
+
+
+    function renderSupplierTable(top20) {
+    const container = document.getElementById('supplierTableContainer');
+
+    const columns = {
+        supplier_name: 'Supplier',
+        supplier_tier: 'Supplier Tier',
+        onTimeCount: 'On-Time Orders',
+    };
+
+    const headerRow = Object.values(columns).map(label => `<th>${label}</th>`).join('');
+
+    const bodyRows = top20.map(supplier =>
+        `<tr>${Object.keys(columns).map(key => `<td>${supplier[key]}</td>`).join('')}</tr>`
+    ).join('');
+
+    container.innerHTML = `
+        <table border="1" cellpadding="5">
+            <thead><tr>${headerRow}</tr></thead>
+            <tbody>${bodyRows}</tbody>
+        </table>
+    `;
+}
 
     </script>
     
