@@ -15,16 +15,16 @@
 
    
     <h2>TOP 10 SUPPLIERS</h2>
+
     <div id='kpiContainer'></div>
     
-    
-
     <select id='monthSelector'></select>
 
     <div id='supplierTableContainer'></div>
 
     <h1>Optimized Supplier Analytics</h1>
 
+  <!-- include all supplier data in charts -->
     <div id='supplierChartContainer'>
         <div div class='supplierChartContainerBox'><canvas id='supplierChart1'></canvas></div>
         <div class='supplierChartContainerBox'><canvas id='supplierChart2'></canvas></div>
@@ -34,6 +34,8 @@
     </div>
 
     <script>
+
+        // include csv
         
         Papa.parse('supplier_performance_granular.csv', {
             download:true,
@@ -42,7 +44,7 @@
             complete: function(results) {
                
 
-
+                // create dropdown to handle csv data
                 showMonthDropdown(results.data);
 
                 const selectedMonth = document.getElementById('monthSelector') .value;
@@ -60,7 +62,7 @@
             }
         });
     
-
+            // render supplier data based on selected month
         function showMonthDropdown(data) {
             const months = [...new Set(data.map(row => row['reporting_month']))].sort();
             const selector = document.getElementById('monthSelector');
@@ -72,17 +74,14 @@
 
         function updateDashboard(data, selectedMonth) {
 
+
+    // kpi text for supplier metrics
     const KpiHeaders = {
         supplier_name: [
             {label: 'Supplier', key: 'supplier_name' },
             {label: 'Orders Received', key: 'orders_received'},
             {label: 'On Time Orders', key: 'order_status'}
         ],
-
-        received_quantity: 'Orders Received',
-        rejected_quantity: 'Orders Rejected', 
-        returned_quantity: 'Orders Returned',
-    
 
 };
 
@@ -93,10 +92,13 @@
     showStatusChart('supplierChart3', data, 'invoice_status', 'Invoice Status');
     showStatusChart('supplierChart4', data, 'unit_of_measure', 'Unit');
 
+
+    // render top 20 suppliers by month
     const top20 = getTop20BySupplier(data, selectedMonth);
     renderSupplierTable(top20);
     }
 
+    //compare supplier by successful delivery === promised delivery date
         function KpiHeadersCards ( data) {
             const cardContainer = document.getElementById('kpiContainer');
             const supplierCounts = {};
@@ -179,7 +181,7 @@
             })
         }
 
-
+        //render top suppliers by month include tier 
         function getSupplierMetrics(data, reportingMonth) {
             const filtered = data.filter (row => row['reporting_month'] === reportingMonth);
             const suppliers = {};
@@ -208,11 +210,7 @@
             return suppliers;
         }
 
-
-
-
-
-
+        // get top 20 suppliers per month
         function getTop20BySupplier(data, reportingMonth) {
             const metrics = getSupplierMetrics(data, reportingMonth);
 
