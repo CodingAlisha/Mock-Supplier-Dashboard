@@ -13,14 +13,17 @@
 <body>
     <h1>Supplier Performance Dashboard</h1>
 
+   
+    <h2>TOP 10 SUPPLIERS</h2>
     <div id='kpiContainer'></div>
+    
     
 
     <select id='monthSelector'></select>
 
     <div id='supplierTableContainer'></div>
 
-    <h1>Consolidated Supplier Performance Stats</h1>
+    <h1>Optimized Supplier Analytics</h1>
 
     <div id='supplierChartContainer'>
         <div div class='supplierChartContainerBox'><canvas id='supplierChart1'></canvas></div>
@@ -30,8 +33,6 @@
 
     </div>
 
-    <!-- <div id='output'>Loading...</div> -->
-
     <script>
         
         Papa.parse('supplier_performance_granular.csv', {
@@ -39,8 +40,7 @@
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
-                // console.log('Parsed data:', results.data);
-                // document.getElementById('output').innerText = 'Loaded' + results.data.length + 'rows. Check console for details'
+               
 
 
                 showMonthDropdown(results.data);
@@ -179,34 +179,6 @@
             })
         }
 
-        // function getSupplierMetrics(data, reportingMonth) {
-        //     const filtered = data.filter (row => row['reporting_month'] === reportingMonth);
-        //     const suppliers = {};
-
-        //     filtered.forEach(row => {
-        //         const name = row['supplier_name'] || 'Unknown Supplier';
-
-        //         if (!suppliers[name]) {
-        //             suppliers[name] ={
-        //                 order_quantity: 0,
-        //                 returned_quantity: 0,
-        //                 rejected_quantity: 0,
-        //                 onTimeCount: 0,
-        //                 totalOrders: 0
-        //             };
-        //         }
-
-        //         suppliers[name].order_quantity += parseFloat(row['order_ quantity']) || 0;
-        //         suppliers[name].returned_quantity += parseFloat(row['returned_ quantity']) || 0;
-        //         suppliers[name].rejected_quantity += parseFloat(row['rejected_ quantity']) || 0;
-        //         suppliers[name].onTimeCount += 1;
-
-        //         if (row['promised_delivery_date'] === row['actual_delivery_date']) {
-        //             suppliers[name].onTimeCount += 1;
-        //         }
-        //     });
-        //     return suppliers;
-        // }
 
         function getSupplierMetrics(data, reportingMonth) {
             const filtered = data.filter (row => row['reporting_month'] === reportingMonth);
